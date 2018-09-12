@@ -1,22 +1,31 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using Pawns;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D))]
-public class Player : PhysicsObject {
+public class Player : Pawn {
 
-    private bool canClimb = false;
-    private bool isClimbing = false;
-    public float climbSpeed = 7;
-    private bool atTop = false;
+    private bool canClimb;
+    private bool isClimbing;
+    [SerializeField]
+    private float climbSpeed = 7;
+    private bool atTop;
 
-    public float walkSpeed = 1;
+    [SerializeField]
+    private float walkSpeed = 1;
+    private float defaultWalkSpeed = 1;
+    /// <summary>
+    /// 1 means there is no modifier. 1.5 is 50% faster when running.
+    /// </summary>
     private float runModifier = 1;
 
-    private bool interacting = false;
-    private float dt = 0;
+    private readonly List<Interactable> currentInteractables = new List<Interactable>();
+    private bool interacting;
+    private float dt;
 
+    private const KeyCode ActionButton = KeyCode.Z;
     
     private SpriteRenderer spriteRenderer;
     private Animator animator;
@@ -24,36 +33,25 @@ public class Player : PhysicsObject {
     // Use this for initialization
     void Awake()
     {
+        defaultWalkSpeed = walkSpeed;
         spriteRenderer = GetComponent<SpriteRenderer>();
         animator = GetComponent<Animator>();
-        rb2d = GetComponent<Rigidbody2D>();
     }
 
     // Use this for initialization
     void Start() {
-        move.y = -1;
-        SetGrounded();
     }
 
     void Update()
     {
-    }
-
-    // Update is called once per frame
-    void FixedUpdate()
-    {
-        move.x = Input.GetAxis("Horizontal");
+        MoveDirection.x = Input.GetAxis("Horizontal");
 
         if (canClimb)
         {
             //Press z to get on the vine.
-            if (Input.GetKeyDown(KeyCode.Z))
+            if (Input.GetKeyDown(ActionButton))
             {
-                isClimbing = true;
-                rb2d.gravityScale = 0;
-                rb2d.velocity = Vector2.zero;
-                animator.enabled = true;
-                animator.SetBool("isClimbing", true);
+                StartClimbing();
                 return;
             }
             if (isClimbing)
@@ -71,7 +69,7 @@ public class Player : PhysicsObject {
                     Jump();
                     StopClimbing();
                 }
-                else if(Input.GetKeyDown(KeyCode.Z))
+                else if (Input.GetKeyDown(ActionButton))
                 {
                     StopClimbing();
                 }
@@ -82,23 +80,52 @@ public class Player : PhysicsObject {
             }
         }
 
+        HandleInteraction();
+        Jump();
+        HandleSprint();
+        HandleTurn();
+
+
+        //animator.SetFloat("velocityX", Mathf.Abs(velocity.x) / maxSpeed);
+
+        animator.enabled = MoveDirection.magnitude > 0.01f;
+        var finalMove = new Vector2(MoveDirection.x * walkSpeed * runModifier, MoveDirection.y * walkSpeed * (runModifier > 1.0f ? 1.2f : 1));
+        rb2d.MovePosition(rb2d.position + finalMove * Time.fixedDeltaTime);
+    }
+
+    /// <summary>
+    /// Handles the player interacting with objects. Player interacts with first interactable it finds.
+    /// </summary>
+    private void HandleInteraction()
+    {
+        if (currentInteractables.Count > 0)
+        {
+            if (Input.GetKeyDown(ActionButton))
+            {
+                if(currentInteractables[0].Interact(this))
+                {
+                    Interacted();
+                    currentInteractables.RemoveAt(0);
+                }
+            }
+        }
+
         if (interacting)
         {
-            if (Time.time - dt > 0.5)
+            if (Time.time - dt > 0.5f)
             {
-                walkSpeed *= 3;
+                walkSpeed = defaultWalkSpeed;
                 interacting = false;
             }
         }
 
-        HandleSprint();
-        HandleTurn();
-        SetGrounded();
-        Jump();
+    }
 
-        animator.enabled = move.magnitude > 0.01f;
-        var finalMove = new Vector2(move.x * walkSpeed * runModifier, move.y * walkSpeed * ((runModifier > 1.0f) ? 1.2f : 1));
-        rb2d.MovePosition(rb2d.position + finalMove * Time.fixedDeltaTime);
+    // Update is called once per frame
+    void FixedUpdate()
+    {
+
+        SetGrounded();
 
     }
 
@@ -127,14 +154,14 @@ public class Player : PhysicsObject {
     /// </summary>
     private void HandleTurn()
     {
-        if (move.x > 0.01f)
+        if (MoveDirection.x > 0.01f)
         {
-            if (spriteRenderer.flipX == true)
+            if (spriteRenderer.flipX)
             {
                 spriteRenderer.flipX = false;
             }
         }
-        else if (move.x < -0.01f)
+        else if (MoveDirection.x < -0.01f)
         {
             if (spriteRenderer.flipX == false)
             {
@@ -153,14 +180,23 @@ public class Player : PhysicsObject {
         if (collision.gameObject.CompareTag("Interactable"))
         {
             var interactable = collision.gameObject.GetComponent<Interactable>();
-            if (interactable.Interact(this))
+            if (interactable.Immediate && interactable.Interact(this))
             {
-                walkSpeed = walkSpeed / 3;
-                interacting = true;
-                dt = Time.time;
+                Interacted();
+            }
+            else
+            {
+                currentInteractables.Add(interactable);
             }
 
         }
+    }
+
+    private void Interacted()
+    {
+        walkSpeed = defaultWalkSpeed / 1.2f;
+        interacting = true;
+        dt = Time.time;
     }
 
     private void OnTriggerStay2D(Collider2D collision)
@@ -174,7 +210,13 @@ public class Player : PhysicsObject {
 
     private void OnTriggerExit2D(Collider2D collision)
     {
-        if (collision.gameObject.CompareTag("Ladder"))
+
+        if (collision.gameObject.CompareTag("Interactable"))
+        {
+            var interactable = collision.gameObject.GetComponent<Interactable>();
+            currentInteractables.Remove(interactable);
+        }
+        else if (collision.gameObject.CompareTag("Ladder"))
         {
             if(isClimbing && transform.position.y > collision.transform.position.y)
             {
@@ -202,20 +244,35 @@ public class Player : PhysicsObject {
     }
 
     /// <summary>
+    /// Sets all values needed for start climbing.
+    /// </summary>
+    private void StartClimbing()
+    {
+        isClimbing = true;
+        rb2d.gravityScale = 0;
+        rb2d.velocity = Vector2.zero;
+        animator.enabled = true;
+        animator.SetBool("isClimbing", true);
+        MoveDirection.y = 0;
+        MoveDirection.x = 0;
+    }
+
+    /// <summary>
     /// Handles the key capture for jumping
     /// </summary>
     private void Jump()
     {
         if (Input.GetKeyDown(KeyCode.Space) && (grounded || isClimbing))
         {
-            move.y = walkSpeed / 1.4f;
+            MoveDirection.y = walkSpeed / 1.1f;
         }
         else
         {
-            move.y -= walkSpeed / 15;
-            if (move.y < 0 && grounded)
+            MoveDirection.x = MoveDirection.x * 1.4f;
+            MoveDirection.y -= walkSpeed / 25;
+            if (MoveDirection.y < 0 && grounded)
             {
-                move.y = 0;
+                MoveDirection.y = 0;
             }
         }
     }
