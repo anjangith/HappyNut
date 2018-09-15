@@ -26,12 +26,13 @@ namespace Pawns
         /// <summary>
         /// Should the pawn be Destroyed when it dies.
         /// </summary>
+        [SerializeField]
         protected bool KillOnDied = false;
 
         /// <summary>
         /// Current hp a player has.
         /// </summary>
-        protected float CurrentHealth = 100;
+        protected virtual float CurrentHealth { get; set; }
 
         #endregion
 
@@ -40,11 +41,13 @@ namespace Pawns
         /// <summary>
         /// Total hp a player can have.
         /// </summary>
-        public float MaxHealth = 100;
+        public int MaxHealth = 100;
 
         #endregion
 
         //public Weapon weapon;
+
+        protected event EventHandler onChangeHealthByAmount;
 
         /// <summary>
         /// Subtract amount to Helath.

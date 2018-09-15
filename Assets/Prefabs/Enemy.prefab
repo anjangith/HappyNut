@@ -37,8 +37,8 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1443616037543568}
-  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
-  m_LocalPosition: {x: 24.66, y: -8.27, z: 0}
+  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
+  m_LocalPosition: {x: -955.21, y: -548.27, z: 0}
   m_LocalScale: {x: 3, y: 3, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -86,9 +86,9 @@ Animator:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1443616037543568}
-  m_Enabled: 0
+  m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: b563b68a139bdc141ad8f490022415d6, type: 2}
+  m_Controller: {fileID: 9100000, guid: 863f25904e0b64446ab5508a48035a21, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -108,6 +108,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6c3769119ae515e4eab008ceb2c23f9b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  distanceToBeGrounded: 1.5
+  gravityModifier: 1
+  KillOnDied: 0
+  MaxHealth: 100
+  walkSpeed: 3
 --- !u!212 &212997425986498050
 SpriteRenderer:
   m_ObjectHideFlags: 1
