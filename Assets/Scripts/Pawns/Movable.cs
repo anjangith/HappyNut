@@ -58,8 +58,7 @@ namespace Pawns
             {
                 MoveDirection.x = 1;
             }
-            //HandleTurn();
-            animator.SetBool("isHit", true);
+            HandleTurn();
         }
 
         // Use this for initialization
