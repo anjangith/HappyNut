@@ -43,11 +43,15 @@ namespace Pawns
         /// </summary>
         public int MaxHealth = 100;
 
+        /// <summary>
+        /// set true to stop pawn from moving. must be implemented.
+        /// </summary>
+        [NonSerialized]
+        public bool Paused = false;
+
         #endregion
 
         //public Weapon weapon;
-
-        protected event EventHandler onChangeHealthByAmount;
 
         /// <summary>
         /// Subtract amount to Helath.
@@ -94,13 +98,9 @@ namespace Pawns
             //aiController.MyState = AICharacterControl.State.IsDead;
             //aiController.IsDead = true;
 
+            Died?.Invoke(this, null);
             //After some delay destroy enemy
             yield return new WaitForSeconds(2);
-            EventHandler handler = Died;
-            if (handler != null)
-            {
-                handler(this, null);
-            }
             if (KillOnDied)
             {
                 Destroy(gameObject);

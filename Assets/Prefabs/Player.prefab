@@ -110,8 +110,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   distanceToBeGrounded: 0.02
   gravityModifier: 1
+  KillOnDied: 1
+  MaxHealth: 100
   climbSpeed: 5
   walkSpeed: 6
+  Slider: {fileID: 0}
 --- !u!212 &212997425986498050
 SpriteRenderer:
   m_ObjectHideFlags: 1
