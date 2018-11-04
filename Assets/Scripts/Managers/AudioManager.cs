@@ -101,10 +101,10 @@ namespace Managers
         /// <param name="soundEffect">The name of the soundeffect. Would be what it's called in Unity.</param>
         public void PlaySoundEffect(string soundEffect)
         {
-            var soundEffectAusioSource = GetSoundEffect(soundEffect);
-            if (soundEffectAusioSource)
+            var soundEffectAudioSource = GetSoundEffect(soundEffect);
+            if (soundEffectAudioSource)
             {
-                soundEffectAusioSource.Play();
+                soundEffectAudioSource.Play();
             }
         }
 
@@ -116,12 +116,12 @@ namespace Managers
         /// <returns>The Sound Effects Audio Source.</returns>
         public AudioSource GetAndPlaySoundEffect(string soundEffect)
         {
-            var soundEffectAusioSource = GetSoundEffect(soundEffect);
-            if (soundEffectAusioSource)
+            var soundEffectAudioSource = GetSoundEffect(soundEffect);
+            if (soundEffectAudioSource)
             {
-                soundEffectAusioSource.Play();
+                soundEffectAudioSource.Play();
             }
-            return soundEffectAusioSource;
+            return soundEffectAudioSource;
         }
 
         /// <summary>
@@ -133,6 +133,10 @@ namespace Managers
             {
                 audioManager.onClickSource.Play();
             }
+            else
+            {
+                Debug.Log("No on click added.");
+            }
         }
 
         /// <summary>
@@ -142,14 +146,16 @@ namespace Managers
         public IEnumerator PlayRandomBackgroundMusic()
         {
             StopMusic();
-            if (backgroundMusicSources.Count == 0)
+            if (audioManager.backgroundMusicSources.Count == 0)
             {
-                yield return null;
+                Debug.Log("Missing background sources. Waiting...");
+                yield return new WaitUntil(() => audioManager.backgroundMusicSources.Count > 0);
+                Debug.Log("Found Them.");
             }
             while (true)
             {
-                int randomChildIndex = UnityEngine.Random.Range(0, backgroundMusicSources.Count);
-                AudioSource audioSource = backgroundMusicSources[randomChildIndex];
+                int randomChildIndex = UnityEngine.Random.Range(0, audioManager.backgroundMusicSources.Count);
+                AudioSource audioSource = audioManager.backgroundMusicSources[randomChildIndex];
                 audioSource.Play();
                 yield return new WaitUntil(() => audioSource.time > audioSource.clip.length - .5f);
             }
@@ -195,6 +201,7 @@ namespace Managers
                 Destroy(audioManager.gameObject);
                 audioManager = this;
                 DontDestroyOnLoad(gameObject);
+                StartCoroutine(audioManager.PlayRandomBackgroundMusic());
             }
             else if (sceneName == audioManager.sceneName)
             {
@@ -221,8 +228,11 @@ namespace Managers
 
         private void StopMusic()
         {
-            mainMenuMusicSource.Stop();
-            mainMenuMusicSource.time = 0;
+            if (mainMenuMusicSource)
+            {
+                mainMenuMusicSource.Stop();
+                mainMenuMusicSource.time = 0;
+            }
             backgroundMusicSources.ForEach(
                 source =>
                 {
@@ -294,12 +304,14 @@ namespace Managers
                     case BackgroundMusic:
                         foreach (Transform backgroundMusicChild in child)
                         {
+                            Debug.Log("Adding BackgroundSong: " + backgroundMusicChild.name);
                             backgroundMusicSources.Add(backgroundMusicChild.GetComponent<AudioSource>());
                         }
                         break;
                     case SoundEffects:
                         foreach (Transform soundEffectChild in child)
                         {
+                            Debug.Log("Adding SoundEffect: " + soundEffectChild.name);
                             soundEffectSources.Add(soundEffectChild.GetComponent<AudioSource>());
                         }
                         break;
@@ -309,7 +321,6 @@ namespace Managers
                         break;
                     case MainMenuMusic:
                         mainMenuMusicSource = child.GetComponent<AudioSource>();
-                        //ClickLength = onClickSource.clip.length;
                         break;
                 }
             }

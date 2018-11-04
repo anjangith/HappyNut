@@ -6,9 +6,12 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/sticky boyee.unity
+    path: Assets/Scenes/StickyBoy.unity
     guid: 52a950c65cd3d064eacd9a6bfd6d8bbb
   - enabled: 1
     path: Assets/Scenes/Jungle.unity
     guid: 856bae3461eb32c46a1f027d38ea5b62
+  - enabled: 1
+    path: Assets/Scenes/TitleScreen.unity
+    guid: 9babe696373d0d64daaf30f76f759438
   m_configObjects: {}

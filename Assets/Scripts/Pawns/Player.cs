@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Interactables;
+using Managers;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -65,11 +66,15 @@ namespace Pawns
 
         private void HandleDeath(object sender, EventArgs eventArgs)
         {
-            Destroy(gameObject);
+            GameManager.GameManagerInst.PlayerDied(0);
         }
 
         void Update()
         {
+            if (!Controllable)
+            {
+                return;
+            }
             MoveDirection.x = Input.GetAxis("Horizontal");
 
             if (canClimb)

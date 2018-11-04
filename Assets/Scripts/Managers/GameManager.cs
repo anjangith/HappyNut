@@ -11,6 +11,7 @@ namespace Managers
     /// This Class takes care of all logic for score and ending a game.
     /// Anything that has to do with the game concept.
     /// </summary>
+    [RequireComponent(typeof(UIManager))]
     public class GameManager : MonoBehaviour
     {
         /// <summary>
@@ -33,17 +34,23 @@ namespace Managers
         /// </summary>
         public int Score;
 
-        public Text MoneyTextUI;
+        public Text MoneyTextUi;
 
         private int money = 0;
+
         /// <summary>
-        /// Point to buy something in store.
+        /// Refrence to UIManager. Is set by UIManagers Awake.
+        /// </summary>
+        public UIManager UiManager { get; set; }
+
+        /// <summary>
+        /// Points to buy something in store.
         /// </summary>
         public int Money {
             get { return money; }
             set {
                 money = value;
-                MoneyTextUI.text = money.ToString();
+                MoneyTextUi.text = money.ToString();
             }
         }
 
@@ -54,10 +61,13 @@ namespace Managers
         {
             if (GameManagerInst)
             {
+                deaths = GameManagerInst.deaths;
+                money = GameManagerInst.money;
+                Score = GameManagerInst.Score;
+                PlayersAlive = GameManagerInst.PlayersAlive;
                 Destroy(GameManagerInst);
             }
             GameManagerInst = this;
-            SetPlayersAlive(true);
 
         }
 
@@ -83,31 +93,33 @@ namespace Managers
             PlayersAlive[deadPlayer] = false;
 
             int numPlayersAlive = 0;
-            int playerAlive = 0;
             for (var playerIndex = 0; playerIndex < PlayersAlive.Length; ++playerIndex)
             {
                 if (PlayersAlive[playerIndex])
                 {
                     numPlayersAlive++;
-                    playerAlive = playerIndex;
                 }
             }
-            if (numPlayersAlive <= 1)
+            if (numPlayersAlive < 1)
             {
-                GameEnded(playerAlive + 1);
+                GameEnded();
             }
         }
 
         /// <summary>
         /// Spawns the Game Over Screen and Stops Time.
         /// </summary>
-        /// <param name="winningPlayer">Will print out player who won like this if winningPlayer = 1 "Player 1 Won!"</param>
-        private void GameEnded(int winningPlayer)
+        private void GameEnded()
         {
             deaths++;
 
+            if (UiManager)
+            {
+                UiManager.ShowPage("GameOver");
+            }
+
             //Pause the game so no movement occurs
-            Time.timeScale = 0;
+            //Time.timeScale = 0;
         }
 
         /// <summary>
@@ -116,12 +128,14 @@ namespace Managers
         /// </summary>
         public void StartGame()
         {
-            ResetGame();
-            SetPlayersAlive(true);
+            StartCoroutine(AudioManager.audioManager.EButtonPressed(() =>
+            {
+                ResetGame();
+                SetPlayersAlive(true);
 
-            StartCoroutine(AudioManager.audioManager.PlayRandomBackgroundMusic());
-
-            Time.timeScale = 1;
+                Time.timeScale = 1;
+                SceneManager.LoadScene("StickyBoy");
+            }));
         }
 
         private void ResetGame()
@@ -150,5 +164,15 @@ namespace Managers
         //    var players = FindObjectsOfType<Player>().ToList();
         //    players.ForEach(player => player.Reset());
         //}
+        public void ShowStartScreen()
+        {
+            SceneManager.LoadScene("TitleScreen");
+        }
+
+        public void LoadScene(string scene)
+        {
+            Debug.Log("Loading " + scene);
+            SceneManager.LoadScene(scene);
+        }
     }
 }
