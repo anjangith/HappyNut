@@ -21,6 +21,7 @@ namespace Pawns
         /// <summary>
         /// The amount of Damage this pawn can do.
         /// </summary>
+        [SerializeField]
         protected int Damage = 20;
 
         /// <summary>
@@ -34,12 +35,44 @@ namespace Pawns
         /// </summary>
         protected virtual float CurrentHealth { get; set; }
 
+        /// <summary>
+        /// refrence to animator.
+        /// </summary>
+        protected Animator animator;
+
+        /// <summary>
+        /// Has pawn used up all thier stamina.
+        /// </summary>
+        protected bool depletedStamina = false;
+
+        protected float stamina = 100.0f;
+
         #endregion
 
         #region Public Variables
 
         /// <summary>
-        /// Total hp a player can have.
+        /// Controls how long the pawn can run.
+        /// </summary>
+        public float Stamina
+        {
+            get { return stamina; }
+            set
+            {
+                stamina = value;
+                if(stamina > 100)
+                {
+                    stamina = 100;
+                }
+                else if (stamina < 0)
+                {
+                    stamina = 0;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Total hp a pawn can have.
         /// </summary>
         public int MaxHealth = 100;
 
@@ -51,6 +84,12 @@ namespace Pawns
 
         #endregion
 
+        // Use this for initialization
+        protected void Awake()
+        {
+            animator = GetComponent<Animator>();
+        }
+
         //public Weapon weapon;
 
         /// <summary>
@@ -59,6 +98,12 @@ namespace Pawns
         /// <param name="amount">dmg to do to player. opposite for healing.</param>
         public void ChangeHealthByAmount(int amount)
         {
+            //Currently getting hit.
+            if (amount > 0 && animator.GetBool("isHit"))
+            {
+                return;
+            }
+
             CurrentHealth -= amount;
 
             if (amount < 0)
@@ -68,13 +113,28 @@ namespace Pawns
             else if (amount > 0)
             {
                 //GetComponent<AICharacterControl>().MyState = AICharacterControl.State.IsHit;
-                Debug.Log("Hit");
+                OnHit(amount);
             }
             if (CurrentHealth <= 0)
             {
                 OnDied();
-                Debug.Log("Died");
             }
+        }
+
+        public event EventHandler<HitEventArgs> Hit;
+
+        /// <summary>
+        /// Triggers the Hit Event.
+        /// </summary>
+        protected virtual void OnHit(int amount)
+        {
+            Debug.Log("Hit");
+
+            animator.SetBool("isHit", true);
+
+            var args = new HitEventArgs();
+            args.Amount = amount;
+            Hit?.Invoke(this, args);
         }
 
         public event EventHandler Died;
@@ -84,6 +144,7 @@ namespace Pawns
         /// </summary>
         protected virtual void OnDied()
         {
+            Debug.Log("Died");
             StartCoroutine(Died_Implementation());
         }
 
@@ -98,14 +159,22 @@ namespace Pawns
             //aiController.MyState = AICharacterControl.State.IsDead;
             //aiController.IsDead = true;
 
-            Died?.Invoke(this, null);
             //After some delay destroy enemy
             yield return new WaitForSeconds(2);
+            Died?.Invoke(this, null);
             if (KillOnDied)
             {
                 Destroy(gameObject);
             }
         }
 
+    }
+
+    public class HitEventArgs : EventArgs
+    {
+        /// <summary>
+        /// Amount hit for can be positive to heal.
+        /// </summary>
+        public int Amount { get; set; }
     }
 }

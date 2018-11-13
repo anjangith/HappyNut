@@ -49,19 +49,27 @@ namespace Pawns
         private const KeyCode ActionButton = KeyCode.Z;
     
         private SpriteRenderer spriteRenderer;
-        private Animator animator;
 
         // Use this for initialization
-        void Awake()
+        new void Awake()
         {
+            base.Awake();
             defaultWalkSpeed = walkSpeed;
             spriteRenderer = GetComponent<SpriteRenderer>();
-            animator = GetComponent<Animator>();
         }
 
         // Use this for initialization
         void Start() {
             Died += HandleDeath;
+            Hit += HandleHit;
+        }
+
+        private void HandleHit(object sender, HitEventArgs eventArgs)
+        {
+            if(eventArgs.Amount > 50)
+            {
+                animator.SetBool("SentFlying", true);
+            }
         }
 
         private void HandleDeath(object sender, EventArgs eventArgs)
@@ -119,7 +127,7 @@ namespace Pawns
 
             //animator.SetFloat("velocityX", Mathf.Abs(velocity.x) / maxSpeed);
 
-            animator.enabled = MoveDirection.magnitude > 0.01f;
+            animator.SetBool("isWalking", MoveDirection.magnitude > 0.01f);
             var finalMove = new Vector2(MoveDirection.x * walkSpeed * runModifier, MoveDirection.y * walkSpeed * (runModifier > 1.0f ? 1.2f : 1));
             rb2d.MovePosition(rb2d.position + finalMove * Time.fixedDeltaTime);
         }
@@ -296,7 +304,7 @@ namespace Pawns
         {
             if (Input.GetKeyDown(KeyCode.Space) && (grounded || isClimbing))
             {
-                MoveDirection.y = walkSpeed / 1.1f;
+                MoveDirection.y = walkSpeed * 1.05f;
             }
             else
             {

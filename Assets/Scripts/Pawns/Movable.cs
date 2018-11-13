@@ -5,6 +5,16 @@ namespace Pawns
 {
     public class Movable: Pawn
     {
+        protected bool awareOfPlayer;
+        /// <summary>
+        /// Property to let the enemy know if he is in the alert state.
+        /// </summary>
+        public bool AwareOfPlayer
+        {
+            get { return awareOfPlayer; }
+            set { awareOfPlayer = value; }
+        }
+
         [SerializeField]
         protected float walkSpeed = 1;
         [SerializeField]
@@ -37,14 +47,13 @@ namespace Pawns
             }
         }
         private SpriteRenderer spriteRenderer;
-        private Animator animator;
 
         // Use this for initialization
-        void Awake()
+        new void Awake()
         {
             defaultWalkSpeed = walkSpeed;
             spriteRenderer = GetComponent<SpriteRenderer>();
-            animator = GetComponent<Animator>();
+            base.Awake();
         }
 
         protected void MoveHorizontal(bool moveLeft)
@@ -67,14 +76,48 @@ namespace Pawns
         }
 	
         // Update is called once per frame
-        protected virtual void Update () {
-            if(Paused || !Controllable)
+        protected virtual void Update ()
+        {
+            if (Paused || !Controllable)
             {
                 return;
             }
+            HandleStamina();
             var finalMove = new Vector2(MoveDirection.x * walkSpeed * runModifier, MoveDirection.y * walkSpeed * (runModifier > 1.0f ? 1.2f : 1));
             rb2d.MovePosition(rb2d.position + finalMove * Time.fixedDeltaTime);
             animator.SetBool("isWalking", true);
+        }
+
+        private void HandleStamina()
+        {
+            if (awareOfPlayer && !depletedStamina)
+            {
+                animator.SetBool("isRunning", true);
+                if (Stamina > 20)
+                {
+                    Stamina -= 5 * Time.deltaTime;
+                    runModifier = 2f;
+                }
+                else if (Stamina > 0)
+                {
+                    Stamina -= 5 * Time.deltaTime;
+                    runModifier = 3f;
+                }
+                else
+                {
+                    runModifier = 1.0f;
+                    depletedStamina = true;
+                    animator.SetBool("isRunning", false);
+                }
+            }
+            else if(depletedStamina && Stamina >= 70)
+            {
+                depletedStamina = false;
+            }
+            else
+            {
+                Stamina += 10 * Time.deltaTime;
+            }
         }
 
         private bool WalkingOffCliff()
@@ -90,7 +133,7 @@ namespace Pawns
             if (MoveDirection.x > 0.01f)
             {
                 transform.localScale = new Vector3(-Math.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
-                if (!spriteRenderer.flipX)
+                if (spriteRenderer && !spriteRenderer.flipX)
                 {
                     //spriteRenderer.flipX = true;
                 }
@@ -98,7 +141,7 @@ namespace Pawns
             else if (MoveDirection.x < -0.01f)
             {
                 transform.localScale = new Vector3(Math.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
-                if (spriteRenderer.flipX)
+                if (spriteRenderer && spriteRenderer.flipX)
                 {
                     //spriteRenderer.flipX = false;
                 }

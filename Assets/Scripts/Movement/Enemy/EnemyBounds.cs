@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using Pawns;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -9,6 +10,10 @@ public class EnemyBounds : MonoBehaviour {
     public void OnTriggerEnter2D(Collider2D collider)
     {
         var enemy = collider.gameObject.GetComponent<Enemy>();
+        if(!enemy) {
+            enemy = collider.GetComponentInParent<Enemy>();
+        }
+
         if(enemy)
         {
             enemy.CliffOnLeft = CliffOnLeft;
